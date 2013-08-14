@@ -12,8 +12,68 @@
     fill: white;
     shape-rendering: crispEdges;
   /*  pointer-events: none; */
+}
+svg  line {
+    stroke: #ddd;
+    stroke-opacity: 0.5;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+svg rect.background {
+    fill: white;
+    shape-rendering: crispEdges;
+  /*  pointer-events: none; */
     
-  }
+}
+
+svg rect.background-edit {
+    fill: blue;
+    fill-opacity:0.2;
+    shape-rendering: crispEdges;
+    pointer-events: none;
+    
+}
+
+svg rect.resizebar {
+    fill: yellow;
+    fill-opacity: 0.5;
+    shape-rendering: crispEdges;
+}
+
+
+svg rect.resizebar:hover {
+    fill-opacity: 0.8;
+}
+
+
+svg rect.resizebar.corner {
+    fill: red;
+}
+
+path {
+    stroke-width: 1;
+    stroke: #0000FF;
+    fill: none;
+    stroke-opacity:0.8
+}
+
+line {
+    stroke: #999;
+    stroke-width:1px;
+}
+ 
+text {
+    font-family: Arial;
+    font-size: 9pt;
+}
+
+rect.extent {
+    fill: pink;
+    fill-opacity:0.7;
+}
+
+
 
 </style>
 </head>
@@ -54,7 +114,7 @@ function testWorksheet() {
 	if (settings.hasOwnProperty("min")) { // TODO - what if only min or max but not both?
 	    new_uri.updateOrAddBaseFilter("dim_range", {'min':settings.min, 'max':settings.max});
 	}
-console.log(new_uri.renderExtraUri());
+
 	var output;
 	$.ajax({url: new_uri.renderExtraUri(),
 		dataType: "json",
@@ -69,14 +129,29 @@ console.log(new_uri.renderExtraUri());
     }
 
     var test_data = [
-	{'plot_coords':[0,5,10,10],
+	{'plot_coords':[0,5,5,10],
 	 'modifiers':{},
 	 'data':[
-		 {url: "http://h1ds.anu.edu.au/data/H1DATA/58063/OPERATIONS/MIRNOV/A14_14/INPUT_1", url_parser:url_parser}
+		 {url: "http://h1ds.anu.edu.au/data/H1DATA/58063/OPERATIONS/MIRNOV/A14_14/INPUT_1", url_parser:url_parser},
+		 {url: "http://h1ds.anu.edu.au/data/H1DATA/58065/OPERATIONS/MIRNOV/A14_14/INPUT_1", url_parser:url_parser}
 		]},
-	{'plot_coords':[0,0,10,5],
+	{'plot_coords':[5,5,10,10],
 	 'modifiers':{},
-	 'data':[{url:"http://h1ds.anu.edu.au/data/H1DATA/58063/OPERATIONS/MIRNOV/A14_14/INPUT_2", url_parser: url_parser},
+	 'data':[
+                   {url:"http://h1ds.anu.edu.au/data/H1DATA/58063/OPERATIONS/I_SEC", url_parser: url_parser},
+                   {url:"http://h1ds.anu.edu.au/data/H1DATA/58065/OPERATIONS/I_SEC", url_parser: url_parser},
+		]},
+	{'plot_coords':[0,0,5,5],
+	 'modifiers':{},
+	 'data':[
+                 {url:"http://h1ds.anu.edu.au/data/ELECTR_DENS/58064/NE_HET/NE_CENTRE", url_parser: url_parser},
+                 {url:"http://h1ds.anu.edu.au/data/ELECTR_DENS/58065/NE_HET/NE_CENTRE", url_parser: url_parser},
+		]},
+	{'plot_coords':[5,0,10,5],
+	 'modifiers':{},
+	 'data':[
+		 {url: "http://h1ds.anu.edu.au/data/H1DATA/58063/OPERATIONS/BOLO_DELTA_R", url_parser:url_parser},
+		 {url: "http://h1ds.anu.edu.au/data/H1DATA/58065/OPERATIONS/BOLO_DELTA_R", url_parser:url_parser},
 		]}
 		    ];
     
@@ -89,15 +164,15 @@ console.log(new_uri.renderExtraUri());
 convertOldH1DSData = function(d) {
   output_data = {
     dimension: [d.dim],
-    dimension_dtype: float, // not used yet by jsdataviewer
+    dimension_dtype: "float", // not used yet by jsdataviewer
     dimension_units: d.units[1], // not used yet by jsdataviewer
-    metadata: {minmax_pairs:[0,1]},
-    name: d.meta.path,
+    metadata: {minmax_pairs:[[0,1]]},
+    name: d.meta.shot + ": " + d.meta.path,
     value: d.data,
     value_dtype: "float", // not used yet by jsdataviewer
     value_units: d.units[0], // not used yet by jsdataviewer
   };
-  
+return output_data;
 };
 
 testWorksheet();

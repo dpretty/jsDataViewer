@@ -58,6 +58,7 @@ d3.chart("dvBaseChart", {
 		chart.data.push(chart.source_data[i].url_parser(
 		    chart.source_data[i].url, chart.source_data[i].modifiers));
 	    }
+	    chart.formatted_data = chart.format_data(chart.data);
 	};
 
 	this.render = function() {
@@ -156,7 +157,6 @@ d3.chart("dvBaseChart").extend("dvTimeSeriesChart", {
 	this.layer("xAxis", chart.main.append("g"), {
 	    dataBind: function(data) {
 		// TODO: chart.data should be [data1, data2, etc...] so we can overplot
-		chart.data = data;
 		return this.selectAll("g.x.axis").data([data]);
 	    },
 	    insert: function() {
@@ -186,9 +186,6 @@ d3.chart("dvBaseChart").extend("dvTimeSeriesChart", {
 	
 	this.layer("yAxis", chart.main.append("g"), {
 	    dataBind: function(data) {
-		// TODO: shouldn't need to attach data for each layer?
-		chart.data = data;
-		
 		return this.selectAll("g.y.axis").data([data]);
 	    },
 	    insert: function() {
@@ -227,16 +224,17 @@ d3.chart("dvBaseChart").extend("dvTimeSeriesChart", {
 	    .y(function(d) { return chart.yScale(d[1]); });
 	
 	
-	var format_data = function(data) {
+	chart.format_data = function(data) {
 	    // have a 1d array of data objects for channels from all signals...
 	    var output_data = [];
 	    var color_index = 0;
 	    for (var i=0; i<data.length;i++) {
 		// format_datum returns list for separate channels of a signal
-		var signal_data = format_datum(data[i]);
+		var signal_data = chart.format_datum(data[i]);
 		for (var j=0; j<signal_data.length; j++){
 		    var channel_data = signal_data[j];
 		    channel_data.color_index = color_index;
+		    channel_data.name = signal_data.name;
 		    output_data.push(channel_data);
 		    ++color_index;
 		}
@@ -247,7 +245,7 @@ d3.chart("dvBaseChart").extend("dvTimeSeriesChart", {
 	// read in the data values provided and give back list of [x,y] for each data series
 	// the lists have a boolean property 'closeLine', if true, the line will be closed
 	// the lists have a boolean property 'fillLine', if true, the line will be filled..
-	var format_datum = function(data) {
+	chart.format_datum = function(data) {
 	    var output_data = [];
 	    // minmax pairs use up 2 channels but are combined here as a single line
 	    var n_minmax_pairs = 0;
@@ -286,21 +284,21 @@ d3.chart("dvBaseChart").extend("dvTimeSeriesChart", {
 		tmp_output_data['fillLine'] = false;
 		output_data.push(tmp_output_data);
 	    }
-	    
+	    output_data.name = data.name;
 	    return output_data;
 	    
 	};
 	
 	this.layer("data", chart.main.append("g"), {
 	    dataBind: function(data) {
-		chart.data = data;
-		return this.selectAll("path.signal").data(format_data(chart.data));
+		return this.selectAll("path.signal").data(chart.formatted_data);
 	    },
 	    insert: function() {
 		return this.append("path");
 	    },
 	    events: {
 		"merge": function() {
+			
 		    return this
 			.attr("class", "signal")
 			.style("stroke", function(d, i) { return chart.colors[2*d.color_index]; })
@@ -320,6 +318,39 @@ d3.chart("dvBaseChart").extend("dvTimeSeriesChart", {
 		"exit": function() {return this.remove()}
 	    }
 	});
+
+	this.layer("labels", chart.main.append("g"), {
+	    dataBind: function(data) {
+		return this.selectAll("text.pathlabel").data(chart.formatted_data);
+	    },
+	    insert: function() {
+		return this.append("text")
+		    .attr("class", "pathlabel");
+	    },
+	    events: {
+		"merge": function() {
+		    return this
+			.attr("x", 10)
+			.attr("y", function(d, i) {return 20*i})
+			.attr("dy", "0.5em")
+			.style("font", "10 Helvetica Neue")
+			.text(function(d) {return d.name})
+			.attr("fill", function(d, i) { return chart.colors[2*d.color_index]; });
+		},
+		
+		"enter": function() {
+		    return this
+			.attr("x", 10)
+			.attr("y", function(d, i) {return 20*i})
+			.attr("dy", "0.5em")
+			.style("font", "10 Helvetica Neue")
+			.text(function(d) {return d.name})
+			.attr("fill", function(d, i) { return chart.colors[2*d.color_index]; });
+		},
+		"exit": function() {return this.remove()}
+	    }
+	});
+
 	
 	var load_selection = function() {
 	    for (var i=0; i<chart.source_data.length; i++) {
@@ -333,7 +364,6 @@ d3.chart("dvBaseChart").extend("dvTimeSeriesChart", {
 	
 	this.layer("interactive", chart.main, {
 	    dataBind: function(data) {
-		chart.data = data;
 		return this.selectAll("g.brush").data([chart.data]);
 	    },
 	    insert: function() {
