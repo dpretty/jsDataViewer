@@ -1,0 +1,108 @@
+<!doctype html>
+<head>
+<meta charset="utf-8">
+<script src="libs/d3.v3.js"></script>
+<script src="libs/d3.chart.js"></script>
+<script src="libs/h1dsuri.js"></script>
+<script src="../dataviewer.js"></script>
+<!-- above don't require jquery -->
+<script src="libs/jquery-1.10.2.min.js"></script>
+<style>
+  svg rect.background {
+    fill: white;
+    shape-rendering: crispEdges;
+  /*  pointer-events: none; */
+    
+  }
+
+</style>
+</head>
+<body>
+
+<div id="dataviewer"></div>
+<script>
+function getRawUri(original_uri, width) {
+    // assume original_url gives a timeseries.
+    var h1ds_uri = new H1DSUri(original_uri);
+    h1ds_uri.addExtraFilter('resample_minmax', {'n_bins':width});
+    h1ds_uri.extra_non_h1ds_query['format'] = 'json';
+    return h1ds_uri;
+}
+
+function testWorksheet() {
+	// data = [plot_1, plot_2, plot_3, ..., plot_n]
+	// plot_n = {plot_coords:[x0, y0, x1, y1],
+	//           data = [series_1,series_2,..., series_n],
+        //            }
+	// series_n = {url: source_url,
+	//             url_parser: function which returns object defined below}
+	// url_parser: function(url, {dim_limits=[[dim0_min, dim0_max], [dim1_min, dim1_max],...], (other modifiers)})
+	//             
+	//             returns {
+	//	        dimension: [dim1, dim2, ...],
+	//	        dimension_dtype: str,
+	//	        dimension_units: str,
+	//	        metadata: {key1:val1, key2:val2, ...},
+	//	        name: str,
+	//	        value: [ch1, ch2, ...],
+	//	        value_dype: str,
+	//	        value_units: str,
+	//	       }
+    function url_parser(url, settings) {
+	// TODO: allow for settings - zooming etc
+	var new_uri = getRawUri(url, settings.width);
+	if (settings.hasOwnProperty("min")) { // TODO - what if only min or max but not both?
+	    new_uri.updateOrAddBaseFilter("dim_range", {'min':settings.min, 'max':settings.max});
+	}
+console.log(new_uri.renderExtraUri());
+	var output;
+	$.ajax({url: new_uri.renderExtraUri(),
+		dataType: "json",
+		async:false})
+	    .done(function(a) {
+                // for new h1ds version, not yet on h1ds.anu server
+                //output = a.data;
+                // for old version, still running on h1ds.anu server
+                output = convertOldH1DSData(a);
+	    });
+	return output;
+    }
+
+    var test_data = [
+	{'plot_coords':[0,5,10,10],
+	 'modifiers':{},
+	 'data':[
+		 {url: "http://h1ds.anu.edu.au/data/H1DATA/58063/OPERATIONS/MIRNOV/A14_14/INPUT_1", url_parser:url_parser}
+		]},
+	{'plot_coords':[0,0,10,5],
+	 'modifiers':{},
+	 'data':[{url:"http://h1ds.anu.edu.au/data/H1DATA/58063/OPERATIONS/MIRNOV/A14_14/INPUT_2", url_parser: url_parser},
+		]}
+		    ];
+    
+    var worksheet = dataviewer.create("div#dataviewer");
+    worksheet.data(test_data);
+    worksheet.draw();
+    
+    }
+
+convertOldH1DSData = function(d) {
+  output_data = {
+    dimension: [d.dim],
+    dimension_dtype: float, // not used yet by jsdataviewer
+    dimension_units: d.units[1], // not used yet by jsdataviewer
+    metadata: {minmax_pairs:[0,1]},
+    name: d.meta.path,
+    value: d.data,
+    value_dtype: "float", // not used yet by jsdataviewer
+    value_units: d.units[0], // not used yet by jsdataviewer
+  };
+  
+};
+
+testWorksheet();
+</script>
+
+
+</body>
+</html>
