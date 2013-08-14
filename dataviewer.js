@@ -368,7 +368,7 @@ dataviewer = function() {
 	_width: 100,
 	_height: 100,
 	n_columns: 10,
-	n_rows: 10,
+	n_rows: 10
     };
 
 
