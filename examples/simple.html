@@ -166,9 +166,9 @@ convertOldH1DSData = function(d) {
     dimension: [d.dim],
     dimension_dtype: "float", // not used yet by jsdataviewer
     dimension_units: d.units[1], // not used yet by jsdataviewer
-    metadata: {minmax_pairs:[[0,1]]},
+    metadata: (d.labels.length == 2 && d.labels[0] == "min" && d.labels[1] == "max") ? {minmax_pairs:[[0,1]]} : {},
     name: d.meta.shot + ": " + d.meta.path,
-    value: d.data,
+    value: (d.data.length <=3 ) ? d.data : [d.data], // HACK - old system returns [val] for 1dim, and [[1,2,3], [1,2,3]] for 2 dim, 
     value_dtype: "float", // not used yet by jsdataviewer
     value_units: d.units[0], // not used yet by jsdataviewer
   };
